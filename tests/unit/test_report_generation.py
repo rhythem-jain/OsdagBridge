@@ -47,7 +47,16 @@ class ReportGenerationTests(unittest.TestCase):
                 }
             },
             "crossbracing_design_results": {
-                "G1-G2": {"diagonal": {"compression": {"efficiency": 0.43}}}
+                "G1-G2": {
+                    "diagonal": {"compression": {"Member.efficiency": 0.43}},
+                    "chord": {"tension": {"Optimum.UR": 0.38}},
+                }
+            },
+            "end_diaphragm_design_results": {
+                "G1-G2": {
+                    "diagonal": {"compression": {"Member.efficiency": 0.30}},
+                    "chord": {"tension": {"Optimum.UR": 0.28}},
+                }
             },
             "deck_report_values": {
                 KEY_DD_M_ULS_SAG: 10.0,
@@ -57,8 +66,8 @@ class ReportGenerationTests(unittest.TestCase):
         summary = utilization_summary(output)
         self.assertEqual(summary["Steel plate girders"], 1.08)
         self.assertEqual(summary["Cross bracing"], 0.43)
+        self.assertEqual(summary["End diaphragms"], 0.30)
         self.assertIsNone(summary["Concrete deck slab"])
-        self.assertIsNone(summary["End diaphragms"])
 
     def test_load_report_separates_selected_vehicle_from_footway(self):
         tex = ch3_loads({
