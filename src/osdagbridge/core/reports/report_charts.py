@@ -39,7 +39,12 @@ def _nested_efficiencies(value: Any):
     """Yield actual efficiency/UR values from nested component result mappings."""
     if isinstance(value, dict):
         for key, child in value.items():
-            if str(key).lower() in {"efficiency", "utilization_ratio", "ur", "dcr"}:
+            # Osdag's member-design results use dotted names such as
+            # ``Member.efficiency`` and ``Optimum.UR``. Match the field name
+            # after the final dot so charts use the same source values as the
+            # Chapter 5 report tables.
+            field_name = str(key).rsplit(".", 1)[-1].lower()
+            if field_name in {"efficiency", "utilization_ratio", "ur", "dcr"}:
                 number = _finite_number(child)
                 if number is not None:
                     yield number
