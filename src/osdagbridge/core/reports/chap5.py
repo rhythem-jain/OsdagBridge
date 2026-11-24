@@ -140,12 +140,14 @@ from osdagbridge.core.utils.common import (
     KEY_UTIL_LTB,
     KEY_UTIL_SHEAR
 )
+from .styles import DESIGN_TABLE_COLUMN_PADDING_PT
 
 from osdagbridge.core.reports.report_utils import _tex, _render_value, get_girder_entries
+from osdagbridge.core.reports.styles import UTILIZATION_FIGURE_WIDTH
 
 if TYPE_CHECKING:
     pass
-def ch5_design_checks(checks_data, bridge) -> str:
+def ch5_design_checks(checks_data, bridge, utilization_chart_path=None) -> str:
     """Chapter 5 — Design Checks.
 
     Parameters
@@ -1408,7 +1410,7 @@ Cross bracing between adjacent plate girders provides lateral stability during c
 
 \vspace{0.4em}
 \noindent
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + str(DESIGN_TABLE_COLUMN_PADDING_PT) + r"""pt}
 \setlength\LTleft{0pt}
 \setlength\LTright{\fill}
 
@@ -1452,7 +1454,7 @@ End diaphragms at the supports transfer transverse loads to the bearings, restra
 
 \vspace{0.4em}
 \noindent
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + str(DESIGN_TABLE_COLUMN_PADDING_PT) + r"""pt}
 \setlength{\LTleft}{0pt}
 \setlength{\LTright}{\fill}
 
@@ -1501,5 +1503,13 @@ End diaphragms at the supports transfer transverse loads to the bearings, restra
 \end{longtable}
 \noindent\textit{Note: UR = Demand / Capacity. All values $\leq 1.0$ indicate passing checks. The governing check for each component is highlighted in the individual design check sections above.}
 
-"""
+""" + (
+        r"""
+\begin{figure}[H]
+\centering
+\includegraphics[width=""" + UTILIZATION_FIGURE_WIDTH + r"]{" + utilization_chart_path + r"""}
+\caption{Overall utilization ratios for the available primary-element checks. N/A marks a component without a valid reported ratio.}
+\end{figure}
+""" if utilization_chart_path else ""
+    )
 

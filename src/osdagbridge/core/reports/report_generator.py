@@ -104,6 +104,7 @@
 #==============================================================================
 
 import os, shutil, logging, datetime, tempfile, subprocess
+import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Literal
 
@@ -129,8 +130,44 @@ from .chap6 import ch6_drawings
 from .chap7 import ch7_quantities
 from .chap8 import ch8_design_log
 from .chap9 import references
+from .styles import latex_layout_preamble
+from .report_charts import (
+    create_material_quantity_chart,
+    create_utilization_chart,
+    utilization_summary,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def repeat_longtable_headers(document_tex: str) -> str:
+    """Add first-page and continued-page headers to simple longtable blocks.
+
+    The chapter templates place one or more bold column headings between the
+    first two horizontal rules. The assembled TeX is the right point to add
+    continuation declarations because dynamic heading rows are already filled.
+    """
+    table_pattern = re.compile(r"(\\begin\{longtable\}.*?\\end\{longtable\})", re.S)
+
+    def add_header(match):
+        table = match.group(1)
+        if r"\endhead" in table:
+            return table
+        rules = list(re.finditer(r"\\hline\s*", table))
+        if len(rules) < 2:
+            return table
+        header_start = rules[0].end()
+        header_end = rules[1].start()
+        header = table[header_start:header_end].strip()
+        if not header or r"\textbf" not in header:
+            return table
+        continuation = (
+            "\n\\endfirsthead\n\\hline\n" + header
+            + "\n\\hline\n\\endhead\n"
+        )
+        return table[:rules[1].end()] + continuation + table[rules[1].end():]
+
+    return table_pattern.sub(add_header, document_tex)
 
 # --- TEMPLATES START ---
 
@@ -156,7 +193,6 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -192,21 +228,12 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 
 \numberwithin{table}{chapter}
 \numberwithin{figure}{chapter}
-% Table layout and spacing: consistent padding, row height, and longtable pre/post skips
-\setlength{\tabcolsep}{6pt}
-\renewcommand{\arraystretch}{1.12}
-\setlength{\LTpre}{0pt}
-\setlength{\LTpost}{6pt}
-% Table rules (outline thickness) and small extra row height for clarity
-\setlength{\arrayrulewidth}{0.5pt}
-\setlength{\extrarowheight}{0.6pt}
+""" + latex_layout_preamble() + r"""
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 5 baseline-skips remain, break to the next page first.
 \BeforeBeginEnvironment{table}{\needspace{5\baselineskip}}
 \BeforeBeginEnvironment{longtable}{\needspace{5\baselineskip}}
-
-\definecolor{osdagGreen}{HTML}{91B014}
 
 \fancypagestyle{main}{
   \fancyhf{}
@@ -898,6 +925,13 @@ def generate_report(payload, request):
             # Compute and inject quantities for Chapter 7
             quantities = calculate_material_quantities(payload.inputs, payload.output_dict)
             payload.inputs.update(quantities)
+            material_chart_path = create_material_quantity_chart(
+                quantities, os.path.join(tmp_images, "material_quantities.png")
+            )
+            utilization_chart_path = create_utilization_chart(
+                utilization_summary(payload.output_dict),
+                os.path.join(tmp_images, "utilization_summary.png"),
+            )
 
             # ── Assemble LaTeX document (fig_paths now has tmp_dir paths) ──
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
@@ -924,11 +958,16 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                doc_parts.append(ch5_design_checks(
+                    payload.design_checks, bridge,
+                    utilization_chart_path="images/utilization_summary.png",
+                ))
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            doc_parts.append(ch7_quantities(
+                payload.inputs, material_chart_path="images/material_quantities.png"
+            ))
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}
@@ -940,12 +979,7 @@ def generate_report(payload, request):
             doc_parts.append(r"\end{document}")
 
             full_tex = "\n".join(doc_parts)
-
-
-            # NOTE: longtable header repetition is handled per-table in each
-            # chapter file (e.g. \endfirsthead / \endhead).  No automatic
-            # post-processing is applied here to avoid mis-ordering captions
-            # and column headings.
+            full_tex = repeat_longtable_headers(full_tex)
 
             tmp_tex = os.path.join(tmp_dir, request.file_stem + '.tex')
             tmp_pdf = os.path.join(tmp_dir, request.file_stem + '.pdf')

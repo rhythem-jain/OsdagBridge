@@ -69,6 +69,7 @@ from osdagbridge.core.utils.common import (
     KEY_WC_MATERIAL,
     KEY_WC_THICKNESS
 )
+from .styles import DESIGN_TABLE_COLUMN_PADDING_PT
 
 from osdagbridge.core.reports.report_utils import _render_value, get_girder_entries, _tex
 
@@ -384,7 +385,7 @@ def _bracing_tables(input_dict, n_girders):
 \newpage
 
 \vspace{0.4em}
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + str(DESIGN_TABLE_COLUMN_PADDING_PT) + r"""pt}
 \setlength\LTleft{0pt}
 \setlength\LTright{\fill}
 
@@ -399,7 +400,7 @@ def _bracing_tables(input_dict, n_girders):
 
 \vspace{0.4em}
 \noindent
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{""" + str(DESIGN_TABLE_COLUMN_PADDING_PT) + r"""pt}
 \setlength\LTleft{0pt}
 \setlength\LTright{\fill}
 

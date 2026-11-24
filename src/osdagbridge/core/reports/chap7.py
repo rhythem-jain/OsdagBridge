@@ -1,4 +1,10 @@
-def ch7_quantities(input_dict):
+from osdagbridge.core.reports.styles import (
+    COMPACT_TABLE_COLUMN_PADDING_PT,
+    MATERIAL_FIGURE_WIDTH,
+)
+
+
+def ch7_quantities(input_dict, material_chart_path=None):
     return r"""
 \chapter{Material Take-off \& Quantity Summary}
 \label{ch:material-takeoff}
@@ -6,7 +12,7 @@ def ch7_quantities(input_dict):
 \noindent\textbf{Table 7.1  Bill of Materials (Steel, Concrete, and Reinforcement Quantities)}
 
 \begingroup
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{""" + str(COMPACT_TABLE_COLUMN_PADDING_PT) + r"""pt}
 \begin{longtable}{|C{1.0cm}|L{3.8cm}|C{2.6cm}|C{1.8cm}|C{1.8cm}|C{1.8cm}|C{1.8cm}|}
 \hline
 \textbf{S.N.} & \textbf{Item Description} & \textbf{Volume} & \textbf{Quantity} & \textbf{Total Volume} & \textbf{Weight (MT)} & \textbf{Total Weight (MT)} \\
@@ -28,6 +34,14 @@ def ch7_quantities(input_dict):
 6 & Crash Barrier & """ + str(input_dict.get("crash_barrier_vol_formula", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_qty", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_vol_total", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_single", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_total", "N.A.")) + r""" \\
 \hline
 \end{longtable}
-"""
+""" + (
+        r"""
+\begin{figure}[H]
+\centering
+\includegraphics[width=""" + MATERIAL_FIGURE_WIDTH + r"]{" + material_chart_path + r"""}
+\caption{Material quantities from the Chapter 7 bill of materials. Structural steel is shown in MT; concrete volume in m\textsuperscript{3}; reinforcement in MT.}
+\end{figure}
+""" if material_chart_path else ""
+    )
 
 
