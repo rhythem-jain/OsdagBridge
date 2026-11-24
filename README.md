@@ -144,6 +144,34 @@ Continuous integration runs automatically through GitHub Actions (`.github/workf
 
 ---
 
+## LaTeX report generator
+
+The report pipeline is orchestrated by
+src/osdagbridge/core/reports/report_generator.py. It assembles the chapter
+templates, writes figures in a temporary directory, and invokes pdflatex.
+Report generation requires the project environment and a working LaTeX
+installation.
+
+This checkout includes report improvements for repeated LongTable headings,
+separate vehicle and footway load tables, shared layout/chart settings, a
+Chapter 5 utilization chart, and Chapter 7 quantity charts. The figures use
+values from the existing report output and mark unavailable values as N/A.
+The existing BOQ does not currently provide centrifugal-force results or
+end-diaphragm quantities, so those items are identified as unavailable rather
+than estimated.
+
+Focused report generator unit checks can be run with the standard library:
+
+    PYTHONPATH=src python -m unittest discover -s tests/unit -p 'test_report_generation.py' -v
+
+Architecture, implementation, test evidence, and integration gaps are
+documented in docs/EXISTING_ARCHITECTURE.md, docs/TECHNICAL_CHANGES.md,
+docs/TESTING_REPORT.md, docs/BEFORE_AFTER_COMPARISON.md, and
+scripts/demo_checklist.md.
+
+The GUI and PDF compilation have not yet been verified in this workspace.
+See the testing report before treating PDF-level requirements as complete.
+
 ## Development Guidelines
 
 ### Key Code Locations
